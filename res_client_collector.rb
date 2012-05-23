@@ -12,6 +12,7 @@ class Info
 
     # 创建3个线程获取卖家的feedback等信息
     def self.collect_seller_feedback_info
+      # TODO use mutil process
       # fork do
         threads = []
         seller_queue = Queue.new #创建处理队列
@@ -20,7 +21,7 @@ class Info
           loop do
             limit = 100 - seller_queue.size
             if limit > 0
-              sellers = Seller.where(:feedback => nil).limit(limit)
+              sellers = Seller.where(:positive_feedback => nil).limit(limit)
               sellers.each { |seller| seller_queue << seller } unless sellers.empty?
             end
             puts limit
@@ -44,7 +45,6 @@ class Info
         seller_info_collectors.each { |sth| sth.join }
         puts 'hehe'
         seller_with_no_feedback_productor.join
-
       # end
     end
 
@@ -109,8 +109,8 @@ class Info
             sites << "#{catagory_uri[0..catagory_uri.length - 6]}/#{c+1}.html?needQuery=n"
           end
 
-          create_multirequest_and_add_httprequests(sites, "seller_list") do |doc|
-            doc.css("a.store").each do |seller|
+          create_multirequest_and_add_httprequests(sites, "seller_list") do |production_list_doc|
+            production_list_doc.css("a.store").each do |seller|
               seller_uri = seller['href']
               #
               # uri_info = "www.example.com/:store_type/:store_number"
@@ -194,7 +194,7 @@ class Info
                   data = doc.content.split(',')
                   ratings, positive_feedback, feedback_score = data[0], data[1], data[3] 
                   seller.update_attributes( 
-                    :positive_feedback => positive_feedback,
+                    :positive_feedback => positive_feedback || "",
                     :feedback_score => feedback_score,
                     :ratings => ratings
                   )

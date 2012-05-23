@@ -172,12 +172,12 @@ class Info
           #
           if s_info != nil
             string_info = s_info.content.gsub(/\w/).inject("") {|s,v| s+=v}
-            re1='.*?'	# Non-greedy match on filler
-            re2='\\d+'	# Uninteresting: int
-            re3='.*?'	# Non-greedy match on filler
-            re4='(\\d+)'	# Integer Number 1
-            re5='.*?'	# Non-greedy match on filler
-            re6='(\\d+)'	# Integer Number 2
+            re1='.*?'	
+            re2='\\d+'
+            re3='.*?'	
+            re4='(\\d+)'
+            re5='.*?'	
+            re6='(\\d+)'
             re=(re1+re2+re3+re4+re5+re6)
             matcher=Regexp.new(re,Regexp::IGNORECASE)
             if matcher.match(string_info)

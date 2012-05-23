@@ -1,5 +1,5 @@
 Author: rices
-DATE: 2012-05-22
+DATE: 2012-05-23
 
 用法：
   1.安装MongoBD，并运行
@@ -10,28 +10,41 @@ DATE: 2012-05-22
       mongoid
       ruby-debug
   3.ruby main.rb 运行程序
-  4.输入startres,使用rest_client开始网页抓取
+  4.选择数据抓取模式
+    输入sellers,使用rest_client开始抓取卖家基本信息
+    输入info,使用rest_client开始抓取卖家信用信息
 
 程序设计：
   Module:
     Info::ResClientCollector -> rest_client抓取功能模块
+
+  Method
+    ResClientCollector.start_collect 卖家数据抓取
+    ResClientCollector.start_collect_feedback_info 抽取数据库数据抓取卖家的信用信息
+
   多线程：
-    默认使用六线程抓取网页，按目录分配每个线程的抓取任务。
+    使用多线程抓取网页
+    1.卖家数据
+      按目录分配每个线程的抓取任务。
+    2.卖家feedback details
+      单生产者多消费者的线程运行模式
+
   数据存储：
     Catagory 保存目录信息
     Seller 保存卖家信息
     Failure 保存请求失败的http request，并记录类型。
             后期可进行错误处理，主要为重新抓取,
             目前(2012-05-22)没有进行此项工作.
-未完成工作：
-  1.每个卖家的feedback,rating信息获取
-  2.每个卖家的详细信息
+
+待优化处理：
+  线程运行机制
+  多进程并发处理
+  etc.
 
 文件说明：
  |--init.rb 程序初始化运行的配置代码
- |--models.rb 主程序入口
- |--res_client_collector.rb rest_client写的网页抓取模块
- |##em-http-test废弃了em-http-request的使用
- |--em-http-test/collector.rb
- |--em-http-test/config.rb
- |--em-http-test/seller_collector.rb
+ |--main.rb 主程序入口
+ |--model.rb 数据存储类,使用MongoDB
+ |--res_client_collector.rb 网页抓取模块
+ |--./screemshoot 程序运行截图
+

@@ -24,12 +24,11 @@ class Info
               sellers = Seller.where(:positive_feedback => nil).limit(limit)
               sellers.each { |seller| seller_queue << seller } unless sellers.empty?
             end
-            puts limit
             sleep 30
           end
         end
         
-        seller_info_collectors = (1..4).map do |i|
+        seller_info_collectors = (1..5).map do |i|
           Thread.new() do
             loop do
               if seller_queue.empty?
@@ -76,9 +75,9 @@ class Info
         # 创建6个线程进行页面数据抓取
         # 
         threads = []
-        offset, limit = 0, catagorys.size/6
-        6.times do |number|
-          limit += catagorys.size%6 if number == 5
+        offset, limit = 0, catagorys.size/5
+        5.times do |number|
+          limit += catagorys.size%5 if number == 4
           cs = catagorys[offset,limit]
           offset += limit
 
@@ -159,7 +158,7 @@ class Info
         feed_back_uri = "http://feedback.aliexpress.com/display/evaluationAjaxService.htm"
         details_feed_back_uri = "http://feedback.aliexpress.com/display/evaluationDsrAjaxService.htm"
 
-        create_multirequest_and_add_httprequests(seller_info_uri,"seller_info") do |doc|
+        create_multirequest_and_add_httprequests(seller_info_uri,"seller_info", 1) do |doc|
           s_info = doc.css("textarea#store-params").first
           # s_info 获取的信息如下(String)：
           #	{
@@ -185,13 +184,13 @@ class Info
                 seller_feedback_uri = "#{feed_back_uri}?ownerMemberId=#{owner_member_id}&companyId=#{company_id}&memberType=seller"
                 seller_feedback_detail_uri = "#{details_feed_back_uri}?ownerAdminSeq=#{owner_member_id}"
 
-                create_multirequest_and_add_httprequests(seller_feedback_uri, "seller_feedback",1) do |doc|
+                create_multirequest_and_add_httprequests(seller_feedback_uri, "seller_feedback",0.3) do |sfr_doc|
                   #
                   # example doc data
                   # 1461,97.3,23-s,3165
                   # ratings, postice feedback, ?? , feedback score
                   #
-                  data = doc.content.split(',')
+                  data = sfr_doc.content.split(',')
                   ratings, positive_feedback, feedback_score = data[0], data[1], data[3] 
                   seller.update_attributes( 
                     :positive_feedback => positive_feedback || "",
@@ -202,7 +201,7 @@ class Info
                   Info::ResClientCollector.info("--->> Got Seller #{seller.name} feedback_ratings: [#{positive_feedback} , #{ratings}]")
                 end
 
-                create_multirequest_and_add_httprequests(seller_feedback_uri, "seller_detail_feedback", 1) do |doc|
+                create_multirequest_and_add_httprequests(seller_feedback_detail_uri, "seller_detail_feedback", 0.3) do |feed_detail_doc|
                   #
                   # example doc data
                   # {
@@ -213,7 +212,7 @@ class Info
                   #
                   detail_feedback = ""
                   begin
-                    doc.content.each_line {|l| detail_feedback += l.strip}
+                    feed_detail_doc.content.each_line {|l| detail_feedback += l.strip}
                   rescue => e
                     detail_feedback = "no_feedback_details"
                   end

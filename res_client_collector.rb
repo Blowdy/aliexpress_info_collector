@@ -35,6 +35,7 @@ class Info
                 sleep 1
               else
                 seller = seller_queue.deq
+                seller.update_attributes(:positive_feedback => "")
                 get_seller_info_and_save(seller)
               end
             end

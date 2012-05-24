@@ -19,17 +19,17 @@ class Info
 
         seller_with_no_feedback_productor = Thread.new() do
           loop do
-            limit = 100 - seller_queue.size
+            limit = Info::ResClientCollector.config.info_products - seller_queue.size
             if limit > 0
-              sellers = Seller.where(:positive_feedback => nil).limit(limit)
+              sellers = Seller.where(:positive_feedback => nil, :has_store => "y").limit(limit)
               sellers.each { |seller| seller_queue << seller } unless sellers.empty?
             end
-            sleep 30
+            sleep Info::ResClientCollector.config.flash_info_products_time
             Info::ResClientCollector.info("******Got #{limit} Sellers Info ********")
           end
         end
         
-        seller_info_collectors = (1..5).map do |i|
+        seller_info_collectors = (1..Info::ResClientCollector.config.info_threads).map do |i|
           Thread.new() do
             loop do
               if seller_queue.empty?
@@ -37,8 +37,7 @@ class Info
               else
                 seller = seller_queue.deq
                 seller.update_attributes(:positive_feedback => "")
-                                                #卖家的url末尾包含productlist.html都是没有店铺信息的
-                get_seller_info_and_save(seller) if not seller_uri.include?("productlist.html") 
+                get_seller_info_and_save(seller)
               end
             end
           end
@@ -77,9 +76,10 @@ class Info
         # 创建6个线程进行页面数据抓取
         # 
         threads = []
-        offset, limit = 0, catagorys.size/6
-        6.times do |number|
-          limit += catagorys.size%6 if number == 5
+        sellers_threads_sizes = Info::ResClientCollector.config.sellers_threads
+        offset, limit = 0, catagorys.size/sellers_threads_sizes
+        sellers_threads_sizes.times do |number|
+          limit += catagorys.size%sellers_threads_sizes if number == sellers_threads_sizes - 1
           cs = catagorys[offset,limit]
           offset += limit
 
@@ -110,7 +110,7 @@ class Info
             sites << "#{catagory_uri[0..catagory_uri.length - 6]}/#{c+1}.html?needQuery=n"
           end
 
-          create_multirequest_and_add_httprequests(sites, "seller_list") do |production_list_doc|
+          create_multirequest_and_add_httprequests(sites, "seller_list", Info::ResClientCollector.config.seller_sleep_time) do |production_list_doc|
             production_list_doc.css("ul#list-items > li > div.detail > div > span > a.store").each do |seller|
               seller_uri = seller['href']
               #
@@ -120,13 +120,19 @@ class Info
               seller_number = uri_info[-1]
               seller_type = uri_info[-2]
 
+                                                                                          # css选择时可能将目录连接选中，此方法可将其排除
               unless Seller.where(:number => seller_number, :type => seller_type).size > 0 || seller_uri.include?("ress.com/category/")
-                s = Seller.create(
+                #
+                # 卖家的url末尾包含productlist.html都是没有店铺信息的
+                # seller_uri.include?("productlist.html")
+                #
+                Seller.create(
                   :name => seller.content,
                   :uri => seller_uri,
                   :number => seller_number,
                   :type => seller_type,
-                  :catagory_name => catagory_name
+                  :catagory_name => catagory_name,
+                  :has_store => seller_uri.include?("productlist.html") ? "n" : "y"
                 )
                 Info::ResClientCollector.info("---> Got Seller:: Number => #{seller_number} ,name => #{seller.content}")
               end
@@ -160,7 +166,7 @@ class Info
         feed_back_uri = "http://feedback.aliexpress.com/display/evaluationAjaxService.htm"
         details_feed_back_uri = "http://feedback.aliexpress.com/display/evaluationDsrAjaxService.htm"
 
-        create_multirequest_and_add_httprequests(seller_info_uri,"seller_info", 1) do |doc|
+        create_multirequest_and_add_httprequests(seller_info_uri,"seller_info", Info::ResClientCollector.config.info_sleep_time ) do |doc|
           s_info = doc.css("textarea#store-params").first
           # s_info 获取的信息如下(String)：
           #	{
@@ -186,7 +192,7 @@ class Info
                 seller_feedback_uri = "#{feed_back_uri}?ownerMemberId=#{owner_member_id}&companyId=#{company_id}&memberType=seller"
                 seller_feedback_detail_uri = "#{details_feed_back_uri}?ownerAdminSeq=#{owner_member_id}"
 
-                create_multirequest_and_add_httprequests(seller_feedback_uri, "seller_feedback",0.3) do |sfr_doc|
+                create_multirequest_and_add_httprequests(seller_feedback_uri, "seller_feedback",0.1) do |sfr_doc|
                   #
                   # example doc data
                   # 1461,97.3,23-s,3165
@@ -203,7 +209,7 @@ class Info
                   Info::ResClientCollector.info("--->> Got Seller #{seller.name} feedback_ratings: [#{positive_feedback} , #{ratings}]")
                 end
 
-                create_multirequest_and_add_httprequests(seller_feedback_detail_uri, "seller_detail_feedback", 0.3) do |feed_detail_doc|
+                create_multirequest_and_add_httprequests(seller_feedback_detail_uri, "seller_detail_feedback", 0.1) do |feed_detail_doc|
                   #
                   # example doc data
                   # {

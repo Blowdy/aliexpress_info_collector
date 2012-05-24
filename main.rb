@@ -23,6 +23,7 @@ require './models'
 
 #rest_client use by res_client_collector
 require './res_client_collector'
+require "./collector_config"
 
 require './init'
 

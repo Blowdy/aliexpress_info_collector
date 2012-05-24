@@ -18,6 +18,7 @@ class Seller
     field :number
     field :name
     field :catagory_name
+    field :has_store
     #feedback
     field :positive_feedback
     field :feedback_score

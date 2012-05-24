@@ -76,9 +76,9 @@ class Info
         # 创建6个线程进行页面数据抓取
         # 
         threads = []
-        offset, limit = 0, catagorys.size/5
-        5.times do |number|
-          limit += catagorys.size%5 if number == 4
+        offset, limit = 0, catagorys.size/6
+        6.times do |number|
+          limit += catagorys.size%6 if number == 5
           cs = catagorys[offset,limit]
           offset += limit
 

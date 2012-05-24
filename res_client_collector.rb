@@ -110,7 +110,7 @@ class Info
           end
 
           create_multirequest_and_add_httprequests(sites, "seller_list") do |production_list_doc|
-            production_list_doc.css("a.store").each do |seller|
+            production_list_doc.css("ul#list-items > li > div.detail > div > span > a.store").each do |seller|
               seller_uri = seller['href']
               #
               # uri_info = "www.example.com/:store_type/:store_number"
@@ -119,7 +119,7 @@ class Info
               seller_number = uri_info[-1]
               seller_type = uri_info[-2]
 
-              unless Seller.where(:number => seller_number, :type => seller_type).size > 0
+              unless Seller.where(:number => seller_number, :type => seller_type).size > 0 || seller_uri.include?("ress.com/category/")
                 s = Seller.create(
                   :name => seller.content,
                   :uri => seller_uri,
@@ -127,8 +127,8 @@ class Info
                   :type => seller_type,
                   :catagory_name => catagory_name
                 )
+                Info::ResClientCollector.info("---> Got Seller:: Number => #{seller_number} ,name => #{seller.content}")
               end
-              Info::ResClientCollector.info("---> Got Seller:: Number => #{seller_number} ,name => #{seller.content}")
             end
           end
         end

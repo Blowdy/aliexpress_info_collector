@@ -192,7 +192,7 @@ class Info
                 seller_feedback_uri = "#{feed_back_uri}?ownerMemberId=#{owner_member_id}&companyId=#{company_id}&memberType=seller"
                 seller_feedback_detail_uri = "#{details_feed_back_uri}?ownerAdminSeq=#{owner_member_id}"
 
-                create_multirequest_and_add_httprequests(seller_feedback_uri, "seller_feedback",0.1) do |sfr_doc|
+                create_multirequest_and_add_httprequests(seller_feedback_uri, "seller_feedback",0.3) do |sfr_doc|
                   #
                   # example doc data
                   # 1461,97.3,23-s,3165
@@ -209,7 +209,7 @@ class Info
                   Info::ResClientCollector.info("--->> Got Seller #{seller.name} feedback_ratings: [#{positive_feedback} , #{ratings}]")
                 end
 
-                create_multirequest_and_add_httprequests(seller_feedback_detail_uri, "seller_detail_feedback", 0.1) do |feed_detail_doc|
+                create_multirequest_and_add_httprequests(seller_feedback_detail_uri, "seller_detail_feedback", 0.3) do |feed_detail_doc|
                   #
                   # example doc data
                   # {

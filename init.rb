@@ -7,12 +7,12 @@ end
 Info::ResClientCollector.configure do |config|
   config.debug = true
 
-  config.sellers_threads = 12
+  config.sellers_threads = 9
   config.seller_sleep_time = 2
 
-  config.info_products = 150
-  config.info_threads = 7
-  config.flash_info_products_time = 20
+  config.info_products = 100
+  config.info_threads = 5
+  config.flash_info_products_time = 30
   config.info_sleep_time = 1
 end
 

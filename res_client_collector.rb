@@ -25,6 +25,7 @@ class Info
               sellers.each { |seller| seller_queue << seller } unless sellers.empty?
             end
             sleep 30
+            Info::ResClientCollector.info("******Got #{limit} Sellers Info ********")
           end
         end
         
@@ -36,14 +37,14 @@ class Info
               else
                 seller = seller_queue.deq
                 seller.update_attributes(:positive_feedback => "")
-                get_seller_info_and_save(seller)
+                                                #卖家的url末尾包含productlist.html都是没有店铺信息的
+                get_seller_info_and_save(seller) if not seller_uri.include?("productlist.html") 
               end
             end
           end
         end
         
         seller_info_collectors.each { |sth| sth.join }
-        puts 'hehe'
         seller_with_no_feedback_productor.join
       # end
     end
@@ -250,14 +251,18 @@ class Info
       def self.failed_req(uri, type,response = "")
         # FIXME
         # debugger
-        puts '==================Failed======================'
         Failure.create(:type => type , :uri => uri, :response => response)
+        puts '******************Failed**********************'
         Info::ResClientCollector.info("#{type}::Collecting Failure #{uri}")
-        puts '==================Failed======================'
+        puts '******************Failed**********************'
       end
 
       def self.info(msg)
-        #return if not Info::Collector.config.debug == false
+        #
+        # TODO
+        # Log 记录
+        # return if not Info::Collector.config.debug == false
+        #
         msg = "\e[32m[Collection::Info] #{msg}\e[0m"
         puts msg
       end
